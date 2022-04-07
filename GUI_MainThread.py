@@ -1,3 +1,5 @@
+import sys
+
 import Timer_Event
 from Camera import Cam_Listener
 from Camera.Cam_Controller import start as startCamera
@@ -7,13 +9,15 @@ import numpy as np
 from PIL import ImageTk, Image
 from Event import subscribe, post_event
 
+application_ON = True
+
 TE = Timer_Event
 Cam_Listener.setup_cam_event_handelers()
 Timer_Event.setup_timer_event_handelers()
 
 root = Tk()
 root.title("WatchDog")
-root.geometry("1280x720")
+root.geometry("1080x720")
 
 # Canvas solution
 canvas = Canvas(root, bg="black", width=640, height=480)
@@ -47,8 +51,12 @@ def video_stream(frame):
 
 
 def exit_program():
+    global application_ON
     post_event("exit_app", data=None)
+    application_ON = False
     root.destroy()
+
+
 
 
 start_Button = Button(root, text="Start Camera", padx=50, command=turnOnCamera)
@@ -59,7 +67,7 @@ stop_Button.pack()
 
 
 def mainLoop():
-    while True:
+    while application_ON:
         root.update()
         root.update_idletasks()
         updateCanvas()

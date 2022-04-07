@@ -4,18 +4,21 @@ import queue
 import cv2
 import subprocess
 
-import self as self
+#import self as self
 
-from Event import post_event
+#from Event import post_event
+import self
 
 stopRecording = False
 camera_on = True
 frames_queue = queue.Queue()
 
 
+
 def start():
     cam_thread = threading.Thread(target=mainLoop)
     cam_thread.start()
+
 
 
 def mainLoop():
@@ -32,13 +35,15 @@ def setStopRecording(data):
 def exit_cam():
     global camera_on
     camera_on = False
+
     print("EXIT CAM CAMERA_ON: ", camera_on)
 
 
 # Write video in to a file.avi
 def recordVideo():
     print("CAMERA_ON: ", camera_on)
-    filename = setVideoFileName()
+    path = "/home/emilio/VIDEOS/"
+    filename = path + setVideoFileName(path)
     frames_per_second = 20.0
     resolution = '480p'
     cap = cv2.VideoCapture(0)
@@ -46,6 +51,7 @@ def recordVideo():
     video_type_cv2 = get_video_type(filename)
     global stopRecording, frames_queue
     stopRecording = False
+    print("PATH: " + filename)
     out = cv2.VideoWriter(filename, video_type_cv2, frames_per_second, dims)
     while True:
         # Display Video
@@ -63,7 +69,7 @@ def recordVideo():
 
     cap.release()
     out.release()
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
 
     # Make the output video lighter              ------ INSTALL ffmpeg IN CPU ---------
     # bashCommand = "ffmpeg -i video.avi video_light.avi"
@@ -91,11 +97,11 @@ def change_res(cap, width, height):
     cap.set(4, height)
 
 
-def setVideoFileName():
+def setVideoFileName(path):
     defaultName = 'video.avi'
     versionNumber = 1
-    bashCommand = "ls"
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE, shell=True)
+    bashCommand = "ls " + path
+    process = subprocess.Popen(bashCommand, stdout=subprocess.PIPE, shell=True)
     stdout, stderr = process.communicate()
     file = stdout.decode('utf-8')
 
