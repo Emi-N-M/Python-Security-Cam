@@ -1,5 +1,5 @@
 import time
-from Event import post_event, subscribe
+from Events.Event import post_event
 import threading
 
 timer_on = True
@@ -33,6 +33,3 @@ def start():
     timer_thread = threading.Thread(target=timer)
     timer_thread.start()
 
-
-def setup_timer_event_handelers():
-    subscribe("exit_app", stop_timer)
