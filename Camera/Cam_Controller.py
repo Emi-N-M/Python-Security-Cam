@@ -3,22 +3,18 @@ import threading
 import queue
 import cv2
 import subprocess
-
-#import self as self
-
-#from Event import post_event
-import self
+import numpy as np
+from Events.Event import post_event
 
 stopRecording = False
 camera_on = True
+movement_detector_ON = False
 frames_queue = queue.Queue()
-
 
 
 def start():
     cam_thread = threading.Thread(target=mainLoop)
     cam_thread.start()
-
 
 
 def mainLoop():
@@ -33,11 +29,14 @@ def setStopRecording(data):
 
 
 def exit_cam():
-    global camera_on
+    global camera_on, stopRecording
+    stopRecording = True
     camera_on = False
-
     print("EXIT CAM CAMERA_ON: ", camera_on)
 
+def set_movement_det(data):
+    global movement_detector_ON
+    movement_detector_ON = data
 
 # Write video in to a file.avi
 def recordVideo():
@@ -49,27 +48,50 @@ def recordVideo():
     cap = cv2.VideoCapture(0)
     dims = get_dims(cap, resolution)
     video_type_cv2 = get_video_type(filename)
-    global stopRecording, frames_queue
+    global stopRecording, frames_queue, movement_detector_ON
     stopRecording = False
     print("PATH: " + filename)
     out = cv2.VideoWriter(filename, video_type_cv2, frames_per_second, dims)
+    frame_cont = 0
+
     while True:
+        print("Cam While")
         # Display Video
         ret, frame = cap.read()
-
         # Convert frame into GRAY-scale to work with PIL library
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         frames_queue.put(gray)
 
-        # cv2.imshow('frame', frame)
+        # Movement detector code
+        if movement_detector_ON:
+            frame_cont += 1
+            noise_tolerance = 15
+            if frame_cont == 1:
+                first_frame = frame
+            else:
+                second_frame = first_frame
+                first_frame = frame
+                diff = cv2.absdiff(first_frame, second_frame)
+                gray_diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY) # gray??
+
+                # If the value of any pixel in gray_diff is noise_tolerance or lower, then set it to zero
+                gray_diff[gray_diff <= noise_tolerance] = 0
+                gray_diff_value_mean = np.mean(gray_diff)
+                movement = gray_diff_value_mean > 1     # Min value of gray_diff_value_mean to detect movement = 1 (?)
+                if movement:
+                    post_event("movement_detected",data=None)
+                    movement_detector_ON = False
+
+                print("Movement?: ", movement )
+
         # Write Video
         out.write(frame)
-        if stopRecording or cv2.waitKey(1) == ord('q'):  # Mark to cut the current video
+        if stopRecording:  # Mark to cut the current video
             break
 
     cap.release()
     out.release()
-    #cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
     # Make the output video lighter              ------ INSTALL ffmpeg IN CPU ---------
     # bashCommand = "ffmpeg -i video.avi video_light.avi"
