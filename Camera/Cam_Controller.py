@@ -40,32 +40,41 @@ def set_movement_det(data):
 
 # Write video in to a file.avi
 def recordVideo():
-    print("CAMERA_ON: ", camera_on)
-    path = "/home/emilio/VIDEOS/"
-    filename = path + setVideoFileName(path)
-    frames_per_second = 20.0
-    resolution = '480p'
-    cap = cv2.VideoCapture(0)
-    dims = get_dims(cap, resolution)
-    video_type_cv2 = get_video_type(filename)
-    global stopRecording, frames_queue, movement_detector_ON
-    stopRecording = False
-    print("PATH: " + filename)
-    out = cv2.VideoWriter(filename, video_type_cv2, frames_per_second, dims)
-    frame_cont = 0
+    try:
+        print("CAMERA_ON: ", camera_on)
+        path = "/home/emilio/VIDEOS/"
+        filename = path + setVideoFileName(path)
+        frames_per_second = 20.0
+        resolution = '480p'
+        cap = cv2.VideoCapture(0)
+        dims = get_dims(cap, resolution)
+        video_type_cv2 = get_video_type(filename)
+        global stopRecording, frames_queue, movement_detector_ON
+        stopRecording = False
+        print("PATH: " + filename)
+        out = cv2.VideoWriter(filename, video_type_cv2, frames_per_second, dims)
+        frame_cont = 0
+        ret, frame = cap.read()
+        cv2.imshow("First Frame: ", frame)
+        cv2.waitKey(0)
+        print("frame: ", frame)
+
+    except:
+        print("Error seting up the Camera")
 
     while True:
-        print("Cam While")
         # Display Video
         ret, frame = cap.read()
         # Convert frame into GRAY-scale to work with PIL library
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(src=frame, code=cv2.COLOR_BGR2GRAY)
         frames_queue.put(gray)
+
+
 
         # Movement detector code
         if movement_detector_ON:
             frame_cont += 1
-            noise_tolerance = 15
+            noise_tolerance = 25
             if frame_cont == 1:
                 first_frame = frame
             else:
@@ -77,6 +86,7 @@ def recordVideo():
                 # If the value of any pixel in gray_diff is noise_tolerance or lower, then set it to zero
                 gray_diff[gray_diff <= noise_tolerance] = 0
                 gray_diff_value_mean = np.mean(gray_diff)
+                print("gray_diff_value_mean", gray_diff_value_mean)
                 movement = gray_diff_value_mean > 1     # Min value of gray_diff_value_mean to detect movement = 1 (?)
                 if movement:
                     post_event("movement_detected",data=None)

@@ -3,7 +3,9 @@ from Events.Event import post_event
 import threading
 
 timer_on = True
-duration = 5
+
+#Duration ov the videos in seconds
+duration = 10
 
 
 
